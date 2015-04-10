@@ -10,13 +10,13 @@ import Network.Wai.EventSource (ServerEvent)
 
 
 data SSErvice key = SSErvice {
-	route :: Request -> key,
-	state :: MVar (State key)
+	getRoute :: Request -> key,
+	getState :: MVar (State key)
 }
 
 data State key = State {
-	channels :: Map key (Chan ServerEvent, Int),
-	keys :: Map SockAddr key
+	getChannels :: Map key (Chan ServerEvent, Int),
+	getKeys :: Map SockAddr key
 }
 
 

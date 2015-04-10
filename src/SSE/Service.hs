@@ -2,7 +2,7 @@
 module SSE.Service where
 
 import Prelude
-import Control.Applicative ((<$>), (<*>))
+import Control.Applicative ((<$>))
 import Control.Concurrent.Chan (Chan)
 import Control.Concurrent.MVar (MVar, newMVar)
 import Data.Map.Strict (Map, empty)
@@ -13,12 +13,17 @@ import Network.Wai.EventSource (ServerEvent)
 
 data SSErvice key = SSErvice {
 	route :: Request -> key,
-	channels :: MVar (Map key (Chan ServerEvent, Int)),
-	keys :: MVar (Map SockAddr key)
+	state :: MVar (State key)
 }
 
+data State key = State {
+	channels :: Map key (Chan ServerEvent, Int),
+	keys :: Map SockAddr key
+}
+
+
 sservice :: (Ord key) => (Request -> key) -> IO (SSErvice key)
-sservice route = SSErvice route <$> newMVar empty <*> newMVar empty
+sservice route = SSErvice route <$> newMVar (State empty empty)
 
 application :: SSErvice a -> Application
 application = undefined

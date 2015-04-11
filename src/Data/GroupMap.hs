@@ -15,10 +15,10 @@ data GroupMap k g v = GM {
 empty :: GroupMap k g v
 empty = undefined
 
-lookup :: (Ord k) => k -> GroupMap k g v -> (g, v)
+lookup :: (Ord k) => k -> GroupMap k g v -> Maybe (g, v)
 lookup = undefined
 
-lookupGroup :: (Ord g) => g -> GroupMap k g v -> [(k, v)]
+lookupGroup :: (Ord g) => g -> GroupMap k g v -> Maybe [(k, v)]
 lookupGroup = undefined
 
 insert :: (Ord k, Ord g) => k -> g -> v -> GroupMap k g v -> GroupMap k g v

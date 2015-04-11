@@ -1,4 +1,3 @@
-{-# LANGUAGE NoImplicitPrelude #-} -- Move to test srunner
 
 module Data.GroupMap where
 

@@ -1,11 +1,10 @@
 
 module SSE.ServiceSpec where
 
-import SSE.Service
-
-import Control.Concurrent.MVar
-import Data.Map.Strict as M
+import BasePrelude
 import Test.Hspec
+
+import SSE.Service
 
 
 spec :: Spec

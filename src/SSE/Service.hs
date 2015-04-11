@@ -3,27 +3,25 @@ module SSE.Service where
 
 import BasePrelude
 import Control.Concurrent.Chan (Chan)
-import Data.Map.Strict as M (Map, empty)
 import Network.Socket (SockAddr)
 import Network.Wai (Application, Request)
 import Network.Wai.EventSource (ServerEvent)
 
+import Data.GroupMap as M
+
 
 type Route key = Request -> Maybe key
+
+type State key = GroupMap SockAddr key (Chan ServerEvent)
 
 data SSErvice key = SSErvice {
 	getRoute :: Route key,
 	getState :: MVar (State key)
 }
 
-data State key = State {
-	getChannels :: Map key (Chan ServerEvent, Int),
-	getKeys :: Map SockAddr key
-}
-
 
 sservice :: (Ord key) => Route key -> IO (SSErvice key)
-sservice route = SSErvice route <$> newMVar (State M.empty M.empty)
+sservice route = SSErvice route <$> newMVar M.empty
 
 application :: SSErvice a -> Application
 application = undefined

@@ -20,14 +20,14 @@ data State key = State {
 }
 
 
-sservice :: (Ord key) => (Request -> key) -> IO (SSErvice key)
-sservice route = SSErvice route <$> newMVar (State M.empty M.empty)
+sservice :: (Ord key) => (Request -> Maybe key) -> IO (SSErvice key)
+sservice route = undefined --SSErvice route <$> newMVar (State M.empty M.empty)
 
 application :: SSErvice a -> Application
 application = undefined
 
-close :: SSErvice a -> SockAddr -> IO ()
-close = undefined
+onClose :: SSErvice a -> SockAddr -> IO ()
+onClose = undefined
 
 send :: (Ord key) => SSErvice key -> key -> ServerEvent -> IO ()
 send = undefined

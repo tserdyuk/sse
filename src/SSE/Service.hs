@@ -34,3 +34,16 @@ send = undefined
 
 sendAll :: (Ord key) => SSErvice key -> ServerEvent -> IO ()
 sendAll = undefined
+
+
+subscribe :: (Ord key) => SockAddr -> key -> State key -> State key
+subscribe = undefined
+
+unsubscribe :: (Ord key) => SockAddr -> State key -> State key
+unsubscribe = undefined
+
+select :: (Ord key) => key -> State key -> Maybe (Chan ServerEvent)
+select = undefined
+
+subscribed :: (Ord key) => key -> State key -> Int
+subscribed = undefined

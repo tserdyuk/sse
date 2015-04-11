@@ -9,8 +9,10 @@ import Network.Wai (Application, Request)
 import Network.Wai.EventSource (ServerEvent)
 
 
+type Route key = Request -> Maybe key
+
 data SSErvice key = SSErvice {
-	getRoute :: Request -> key,
+	getRoute :: Route key,
 	getState :: MVar (State key)
 }
 
@@ -20,8 +22,8 @@ data State key = State {
 }
 
 
-sservice :: (Ord key) => (Request -> Maybe key) -> IO (SSErvice key)
-sservice route = undefined --SSErvice route <$> newMVar (State M.empty M.empty)
+sservice :: (Ord key) => Route key -> IO (SSErvice key)
+sservice route = SSErvice route <$> newMVar (State M.empty M.empty)
 
 application :: SSErvice a -> Application
 application = undefined

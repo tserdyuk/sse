@@ -4,7 +4,7 @@ module Data.GroupMap where
 import BasePrelude
 import Data.Map.Strict as M
 	(Map, delete, empty, insert, insertWith, lookup, update, updateLookupWithKey)
-import Data.Set as S (Set, delete, singleton, toList, union)
+import Data.Set as S (Set, delete, null, singleton, toList, union)
 
 
 data GroupMap k g v = GM {
@@ -38,4 +38,5 @@ delete :: (Ord k, Ord g) => k -> GroupMap k g v -> GroupMap k g v
 delete k (GM ks gs) = GM ks' gs' where
 	(g, ks') = updateLookupWithKey (const . const Nothing) k ks
 	gs' = maybe gs (\(g, v) -> M.update (del v) g gs) g
-	del v = Just . S.delete (KV (k, v))
+	del v kvs = bool Just (const Nothing) (S.null kvs') kvs' where
+		kvs' = S.delete (KV (k, v)) kvs

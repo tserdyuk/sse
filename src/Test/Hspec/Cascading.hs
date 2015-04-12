@@ -1,9 +1,9 @@
 
-module Test.Hspec.Cascading (CascadingSpec, describe, it, shouldBe, spec) where
+module Test.Hspec.Cascading (CascadingSpec, describe, it, shouldBe) where
 
 import BasePrelude hiding (cast, map)
 import Data.DList (DList, map, singleton, snoc)
-import qualified Test.Hspec as H
+import qualified Test.Hspec as H (Spec, it, shouldBe)
 
 
 type CascadingSpec = CascadingSpecM ()
@@ -23,12 +23,11 @@ cast (CExpectation io) = CExpectation io
 cast (CSpec title specs) = CSpec title (map cast specs)
 
 
-spec :: CascadingSpec -> H.Spec
-spec (CSpec title specs) = undefined
+describe :: String -> CascadingSpec -> H.Spec
+describe subject (CSpec title specs) = undefined
 
-describe, it :: String -> CascadingSpec -> CascadingSpec
+it :: String -> CascadingSpec -> CascadingSpec
 it title spec = CSpec title (singleton spec)
-describe = it
 
 shouldBe :: (Eq a, Show a) => a -> a -> CascadingSpec
 shouldBe x y = CExpectation (H.shouldBe x y)

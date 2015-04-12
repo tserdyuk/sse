@@ -2,8 +2,9 @@
 module Data.GroupMap where
 
 import BasePrelude
-import Data.Map.Strict as M (Map, empty, insert, insertWith, lookup)
-import Data.Set as S (Set, singleton, toList, union)
+import Data.Map.Strict as M
+	(Map, delete, empty, insert, insertWith, lookup, update, updateLookupWithKey)
+import Data.Set as S (Set, delete, singleton, toList, union)
 
 
 data GroupMap k g v = GM {
@@ -33,5 +34,8 @@ insert :: (Ord k, Ord g) => k -> g -> v -> GroupMap k g v -> GroupMap k g v
 insert k g v (GM ks gs) = GM (M.insert k (g, v) ks) gs' where
 	gs' = M.insertWith S.union g (S.singleton $ KV (k, v)) gs
 
-delete :: (Ord k) => k -> GroupMap k g v -> GroupMap k g v
-delete = undefined
+delete :: (Ord k, Ord g) => k -> GroupMap k g v -> GroupMap k g v
+delete k (GM ks gs) = GM ks' gs' where
+	(g, ks') = updateLookupWithKey (const . const Nothing) k ks
+	gs' = maybe gs (\(g, v) -> M.update (del v) g gs) g
+	del v = Just . S.delete (KV (k, v))

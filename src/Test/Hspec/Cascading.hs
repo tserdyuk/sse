@@ -1,5 +1,5 @@
 
-module Test.Hspec.Cascading (CascadingSpec, describe, it, shouldBe) where
+module Test.Hspec.Cascading (Spec, CascadingSpec, describe, it, printLog, shouldBe) where
 
 import BasePrelude hiding (cast)
 import Data.DList (DList, append, cons, fromList, singleton, snoc)
@@ -49,3 +49,6 @@ it title (CSpecExpr Nothing expect specs) = CSpecExpr (Just title) expect specs
 
 shouldBe :: (Eq a, Show a) => a -> a -> CascadingSpec
 shouldBe x y = CSpecExpr Nothing (H.shouldBe x y) empty
+
+printLog :: String -> CascadingSpec
+printLog message = CSpecExpr Nothing (print message) empty

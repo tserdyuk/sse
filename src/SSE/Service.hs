@@ -13,8 +13,7 @@ import Data.GroupMap (GroupMap, lookupGroup)
 import qualified Data.GroupMap as M (delete, empty, insert)
 
 
--- Add IO for future authorization
-type Route key = Request -> Maybe key
+type Route key = Request -> IO (Maybe key)
 
 type State key = GroupMap SockAddr key (Chan ServerEvent)
 
@@ -28,7 +27,7 @@ sservice :: (Ord key) => Route key -> IO (SSErvice key)
 sservice route = SSErvice route <$> newMVar M.empty
 
 application :: (Ord key) => SSErvice key -> Application
-application (SSErvice route state) request respond = case route request of
+application (SSErvice route state) request respond = route request >>= \case
 	Just key -> do
 		chan <- modifyMVar state (getChannel (remoteHost request) key)
 		eventSourceAppChan chan request respond

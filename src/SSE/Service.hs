@@ -3,14 +3,17 @@ module SSE.Service (SSErvice, application, onClose, send, sservice) where
 
 import BasePrelude
 import Control.Concurrent.Chan (Chan, writeChan)
+import Data.ByteString.Lazy as B (empty)
+import Network.HTTP.Types (unauthorized401)
 import Network.Socket (SockAddr)
-import Network.Wai (Application, Request)
-import Network.Wai.EventSource (ServerEvent)
+import Network.Wai (Application, Request, lazyRequestBody, responseLBS)
+import Network.Wai.EventSource (ServerEvent, eventSourceAppChan)
 
 import Data.GroupMap (GroupMap, lookupGroup)
 import qualified Data.GroupMap as M (delete, empty, insert)
 
 
+-- Add IO for future authorization
 type Route key = Request -> Maybe key
 
 type State key = GroupMap SockAddr key (Chan ServerEvent)
@@ -24,8 +27,15 @@ data SSErvice key = SSErvice {
 sservice :: (Ord key) => Route key -> IO (SSErvice key)
 sservice route = SSErvice route <$> newMVar M.empty
 
-application :: SSErvice a -> Application
-application = undefined
+application :: (Ord key) => SSErvice key -> Application
+application (SSErvice route state) request respond = case route request of
+	Just key -> do
+		channel <- modifyMVar state (getChannel key)
+		eventSourceAppChan channel request respond
+	Nothing -> respond $ responseLBS unauthorized401 [] B.empty
+
+getChannel :: (Ord key) => key -> State key -> IO (State key, Chan ServerEvent)
+getChannel key state = undefined
 
 onClose :: (Ord key) => SSErvice key -> SockAddr -> IO ()
 onClose (SSErvice _ state) addr = modifyMVar_ state (return . M.delete addr)
@@ -37,12 +47,5 @@ send service key se = do
 		Just ((_, channel) : _) -> writeChan channel se
 		Nothing -> return ()
 
-
-subscribe :: (Ord key) => SockAddr -> key -> State key -> State key
-subscribe addr key state = undefined
-
-select :: (Ord key) => key -> State key -> Maybe (Chan ServerEvent)
-select = undefined
-
-subscribed :: (Ord key) => key -> State key -> Int
-subscribed = undefined
+lookupChannel :: (Ord key) => key -> State key -> Maybe (Chan ServerEvent)
+lookupChannel key = fmap (snd . head) . lookupGroup key

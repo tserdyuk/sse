@@ -2,7 +2,7 @@
 module SSE.Service (SSErvice, application, onClose, send, sservice) where
 
 import BasePrelude
-import Control.Concurrent.Chan (Chan)
+import Control.Concurrent.Chan (Chan, writeChan)
 import Network.Socket (SockAddr)
 import Network.Wai (Application, Request)
 import Network.Wai.EventSource (ServerEvent)
@@ -27,18 +27,16 @@ sservice route = SSErvice route <$> newMVar M.empty
 application :: SSErvice a -> Application
 application = undefined
 
-onClose :: SSErvice a -> SockAddr -> IO ()
-onClose = undefined
+onClose :: (Ord key) => SSErvice key -> SockAddr -> IO ()
+onClose (SSErvice _ state) addr = modifyMVar_ state (return . M.delete addr)
 
 send :: (Ord key) => SSErvice key -> key -> ServerEvent -> IO ()
-send = undefined
+send (SSErvice _ state) key se = readMVar state >>=
+	flip writeChan se . snd . head . fromJust . lookupGroup key
 
 
 subscribe :: (Ord key) => SockAddr -> key -> State key -> State key
 subscribe addr key state = undefined
-
-unsubscribe :: (Ord key) => SockAddr -> State key -> State key
-unsubscribe = M.delete
 
 select :: (Ord key) => key -> State key -> Maybe (Chan ServerEvent)
 select = undefined

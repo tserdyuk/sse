@@ -30,17 +30,14 @@ sservice route = SSErvice route <$> newMVar M.empty
 application :: (Ord key) => SSErvice key -> Application
 application (SSErvice route state) request respond = case route request of
 	Just key -> do
-		channel <- modifyMVar state (getChannel (remoteHost request) key)
-		eventSourceAppChan channel request respond
+		chan <- modifyMVar state (getChannel (remoteHost request) key)
+		eventSourceAppChan chan request respond
 	Nothing -> respond $ responseLBS unauthorized401 [] B.empty
 
 getChannel :: (Ord key) => SockAddr -> key -> State key -> IO (State key, Chan ServerEvent)
 getChannel addr key state = case lookupChannel key state of
-	Just channel -> return (state, channel)
-	Nothing -> do
-		channel <- newChan
-		let newState = M.insert addr key channel
-		return (state, channel)
+	Just chan -> return (state, chan)
+	Nothing -> newChan >>= \chan -> return (M.insert addr key chan state, chan)
 
 onClose :: (Ord key) => SSErvice key -> SockAddr -> IO ()
 onClose (SSErvice _ state) addr = modifyMVar_ state (return . M.delete addr)

@@ -1,9 +1,10 @@
 
-module Data.GroupMap (GroupMap, delete, empty, insert, lookup, lookupGroup) where
+module Data.GroupMap
+	(GroupMap, delete, empty, insert, lookup, lookupGroup, toGroupList) where
 
 import BasePrelude hiding (delete, empty, insert, lookup)
 import Data.Map.Strict (Map, insertWith, update, updateLookupWithKey)
-import qualified Data.Map.Strict as M (delete, empty, insert, lookup)
+import qualified Data.Map.Strict as M (delete, empty, insert, lookup, toList)
 import Data.Set as S (Set, union)
 import qualified Data.Set as S (delete, null, singleton)
 
@@ -41,3 +42,6 @@ delete k (GM ks gs) = GM ks' gs' where
 	gs' = maybe gs (\(g, v) -> update (del v) g gs) g
 	del v kvs = bool Just (const Nothing) (S.null kvs') kvs' where
 		kvs' = S.delete (KV (k, v)) kvs
+
+toGroupList :: GroupMap k g v -> [(k, (g, v))]
+toGroupList (GM ks _) = M.toList ks

@@ -3,13 +3,14 @@ module SSE.Service (SSErvice, application, onClose, send, sservice) where
 
 import BasePrelude
 import Control.Concurrent.Chan (Chan, newChan, writeChan)
-import Data.ByteString.Lazy as B (empty)
+import Data.ByteString.Lazy as B (empty, singleton)
+import Data.ByteString.Builder (lazyByteString)
 import Network.HTTP.Types (unauthorized401)
 import Network.Socket (SockAddr)
 import Network.Wai (Application, Request, lazyRequestBody, remoteHost, responseLBS)
-import Network.Wai.EventSource (ServerEvent, eventSourceAppChan)
+import Network.Wai.EventSource (ServerEvent (CommentEvent), eventSourceAppChan)
 
-import Data.GroupMap (GroupMap, lookupGroup)
+import Data.GroupMap (GroupMap, lookupGroup, toGroupList)
 import qualified Data.GroupMap as M (delete, empty, insert)
 
 
@@ -24,7 +25,16 @@ data SSErvice key = SSErvice {
 
 
 sservice :: (Ord key) => Route key -> IO (SSErvice key)
-sservice route = SSErvice route <$> newMVar M.empty
+sservice route = do
+	state <- newMVar M.empty
+	forkIO $ keepAlive state
+	return $ SSErvice route state
+
+keepAlive :: MVar (State key) -> IO ()
+keepAlive state = go where
+	go = readMVar state >>= pingAll >> threadDelay 20000000 >> go
+	pingAll = mapM_ (ping . snd . snd) . toGroupList
+	ping = flip writeChan (CommentEvent (lazyByteString $ singleton 0))
 
 application :: (Ord key) => SSErvice key -> Application
 application (SSErvice route state) request respond = route request >>= \case

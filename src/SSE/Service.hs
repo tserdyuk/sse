@@ -3,7 +3,7 @@ module SSE.Service (SSErvice, application, onClose, send, sservice) where
 
 import BasePrelude
 import Control.Concurrent.Chan (Chan, newChan, writeChan)
-import Data.ByteString.Lazy as B (empty, singleton)
+import Data.ByteString.Lazy as B (empty)
 import Data.ByteString.Builder (lazyByteString)
 import Network.HTTP.Types (unauthorized401)
 import Network.Socket (SockAddr)
@@ -34,7 +34,7 @@ keepAlive :: MVar (State key) -> IO ()
 keepAlive state = go where
 	go = readMVar state >>= pingAll >> threadDelay 20000000 >> go
 	pingAll = mapM_ (ping . snd . snd) . toGroupList
-	ping = flip writeChan (CommentEvent (lazyByteString $ singleton 0))
+	ping = flip writeChan (CommentEvent $ lazyByteString $ B.empty)
 
 application :: (Ord key) => SSErvice key -> Application
 application (SSErvice route state) request respond = route request >>= \case

@@ -18,17 +18,14 @@ type Route key = Request -> IO (Maybe key)
 
 type State key = GroupMap SockAddr key (Chan ServerEvent)
 
-data SSErvice key = SSErvice {
-	getRoute :: Route key,
-	getState :: MVar (State key)
-}
+newtype SSErvice key = SSErvice (MVar (State key))
 
 
-sservice :: (Ord key) => Route key -> IO (SSErvice key)
-sservice route = do
+sservice :: (Ord key) => IO (SSErvice key)
+sservice = do
 	state <- newMVar M.empty
 	forkIO $ keepAlive state
-	return $ SSErvice route state
+	return $ SSErvice state
 
 keepAlive :: MVar (State key) -> IO ()
 keepAlive state = go where
@@ -36,14 +33,14 @@ keepAlive state = go where
 	pingAll = mapM_ (ping . snd . snd) . toGroupList
 	ping = flip writeChan (CommentEvent $ lazyByteString $ B.empty)
 
-application :: (Ord key) => SSErvice key -> Application
-application service@(SSErvice route _) request respond = route request >>= \case
+application :: (Ord key) => Route key -> SSErvice key -> Application
+application route service request respond = route request >>= \case
 	Just key -> subscribe service key request respond
+	-- TODO: use emptyResponse
 	Nothing -> respond $ responseLBS unauthorized401 [] B.empty
 
--- TODO: move route to application
 subscribe :: (Ord key) => SSErvice key -> key -> Application
-subscribe (SSErvice _ state) key request respond =
+subscribe (SSErvice state) key request respond =
 	modifyMVar state (getChannel (remoteHost request) key) >>= app
 	where app chan = eventSourceAppChan chan request respond
 
@@ -55,10 +52,10 @@ getChannel addr key state = case lookupChannel key state of
 	Nothing -> newChan >>= \chan -> return (M.insert addr key chan state, chan)
 
 onClose :: (Ord key) => SSErvice key -> SockAddr -> IO ()
-onClose (SSErvice _ state) addr = modifyMVar_ state (return . M.delete addr)
+onClose (SSErvice state) addr = modifyMVar_ state (return . M.delete addr)
 
 send :: (Ord key) => SSErvice key -> key -> ServerEvent -> IO ()
-send service key se = readMVar (getState service) >>=
+send (SSErvice state) key se = readMVar state >>=
 	maybe (return ()) (flip writeChan se) . lookupChannel key
 
 lookupChannel :: (Ord key) => key -> State key -> Maybe (Chan ServerEvent)

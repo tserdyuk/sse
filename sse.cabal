@@ -14,7 +14,8 @@ cabal-version: >= 1.10
 library
   exposed-modules:
     SSE,
-    SSE.Service
+    SSE.Service,
+    SSE.Utils
   other-modules:
     Data.GroupMap
   default-extensions:

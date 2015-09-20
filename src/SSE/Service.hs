@@ -7,11 +7,12 @@ import Data.ByteString.Lazy as B (empty)
 import Data.ByteString.Builder (lazyByteString)
 import Network.HTTP.Types (unauthorized401)
 import Network.Socket (SockAddr)
-import Network.Wai (Application, Request, lazyRequestBody, remoteHost, responseLBS)
+import Network.Wai (Application, Request, lazyRequestBody, remoteHost)
 import Network.Wai.EventSource (ServerEvent (CommentEvent), eventSourceAppChan)
 
 import Data.GroupMap (GroupMap, lookupGroup, toGroupList)
 import qualified Data.GroupMap as M (delete, empty, insert)
+import SSE.Utils (emptyResponse)
 
 
 type Route key = Request -> IO (Maybe key)
@@ -36,8 +37,7 @@ keepAlive state = go where
 application :: (Ord key) => Route key -> SSErvice key -> Application
 application route service request respond = route request >>= \case
 	Just key -> subscribe service key request respond
-	-- TODO: use emptyResponse
-	Nothing -> respond $ responseLBS unauthorized401 [] B.empty
+	Nothing -> respond $ emptyResponse unauthorized401
 
 subscribe :: (Ord key) => SSErvice key -> key -> Application
 subscribe (SSErvice state) key request respond =

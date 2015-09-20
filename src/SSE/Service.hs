@@ -41,15 +41,14 @@ application route service request respond = route request >>= \case
 
 subscribe :: (Ord key) => SSErvice key -> key -> Application
 subscribe (SSErvice state) key request respond =
-	modifyMVar state (getChannel (remoteHost request) key) >>= app
-	where app chan = eventSourceAppChan chan request respond
+	modifyMVar state (addClient (remoteHost request) key) >>=
+	\chan -> eventSourceAppChan chan request respond
 
 
-getChannel :: (Ord key) => SockAddr -> key -> State key -> IO (State key, Chan ServerEvent)
-getChannel addr key state = case lookupChannel key state of
-	-- TODO: add new addr - rename function
-	Just chan -> return (state, chan)
-	Nothing -> newChan >>= \chan -> return (M.insert addr key chan state, chan)
+addClient :: (Ord key) => SockAddr -> key -> State key -> IO (State key, Chan ServerEvent)
+addClient addr key state =
+	maybe newChan return (lookupChannel key state) >>=
+	\chan -> return (M.insert addr key chan state, chan)
 
 onClose :: (Ord key) => SSErvice key -> SockAddr -> IO ()
 onClose (SSErvice state) addr = modifyMVar_ state (return . M.delete addr)

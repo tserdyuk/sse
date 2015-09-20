@@ -1,5 +1,5 @@
 
-module SSE.Service (SSErvice, application, onClose, send, sservice) where
+module SSE.Service (SSErvice, application, onClose, send, sservice, subscribe) where
 
 import BasePrelude
 import Control.Concurrent.Chan (Chan, newChan, writeChan)
@@ -37,14 +37,20 @@ keepAlive state = go where
 	ping = flip writeChan (CommentEvent $ lazyByteString $ B.empty)
 
 application :: (Ord key) => SSErvice key -> Application
-application (SSErvice route state) request respond = route request >>= \case
-	Just key -> do
-		chan <- modifyMVar state (getChannel (remoteHost request) key)
-		eventSourceAppChan chan request respond
+application service@(SSErvice route _) request respond = route request >>= \case
+	Just key -> subscribe service key request respond
 	Nothing -> respond $ responseLBS unauthorized401 [] B.empty
+
+-- TODO: move route to application
+subscribe :: (Ord key) => SSErvice key -> key -> Application
+subscribe (SSErvice _ state) key request respond =
+	modifyMVar state (getChannel (remoteHost request) key) >>= app
+	where app chan = eventSourceAppChan chan request respond
+
 
 getChannel :: (Ord key) => SockAddr -> key -> State key -> IO (State key, Chan ServerEvent)
 getChannel addr key state = case lookupChannel key state of
+	-- TODO: add new addr - rename function
 	Just chan -> return (state, chan)
 	Nothing -> newChan >>= \chan -> return (M.insert addr key chan state, chan)
 

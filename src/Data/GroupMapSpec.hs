@@ -24,3 +24,5 @@ spec = describe "GroupMap" $
 			let gmap2 = M.delete 'a' gmap
 			M.lookup 'a' gmap2 `shouldBe` Nothing
 			M.lookupGroup 1 gmap2 `shouldBe` Nothing
+		it "should not delete nonexistent" $ do
+			M.delete 'b' gmap `shouldBe` gmap
